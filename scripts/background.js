@@ -319,7 +319,7 @@ chrome.webRequest.onCompleted.addListener(function(details) {
       else {
         wmAvailabilityCheck(details.url, function(wayback_url, url) {
           chrome.browserAction.setBadgeBackgroundColor({color:[255, 0, 0, 230]});
-          chrome.browserAction.setBadgeText({text:"-"});
+          chrome.browserAction.setBadgeText({text:""});
         }, function() {
           chrome.browserAction.setBadgeBackgroundColor({color:[255, 0, 0, 230]});
           chrome.browserAction.setBadgeText({text:"!"});
