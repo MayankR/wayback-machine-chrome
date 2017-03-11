@@ -284,7 +284,12 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
   ["blocking", "requestHeaders"]
 );
 
-
+/**
+ * Remove extension badge if tab changed
+ */
+chrome.tabs.onActivated.addListener(function(tabId, changeInfo, tab) {
+    chrome.browserAction.setBadgeText({text:''});
+});
 
 /**
  * Header callback
@@ -293,23 +298,33 @@ chrome.webRequest.onCompleted.addListener(function(details) {
   function tabIsReady(isIncognito) {
     var httpFailCodes = [404, 408, 410, 451, 500, 502, 503, 504,
                          509, 520, 521, 523, 524, 525, 526];
-
     if (isIncognito === false &&
         details.frameId === 0 &&
-        httpFailCodes.indexOf(details.statusCode) >= 0 &&
         isValidUrl(details.url)) {
-      wmAvailabilityCheck(details.url, function(wayback_url, url) {
-        chrome.tabs.executeScript(details.tabId, {
-          file: "scripts/client.js"
-        }, function() {
-          chrome.tabs.sendMessage(details.tabId, {
-            type: "SHOW_BANNER",
-            wayback_url: wayback_url
+      if(httpFailCodes.indexOf(details.statusCode) >= 0)
+      {
+        wmAvailabilityCheck(details.url, function(wayback_url, url) {
+          chrome.tabs.executeScript(details.tabId, {
+            file: "scripts/client.js"
+          }, function() {
+            chrome.tabs.sendMessage(details.tabId, {
+              type: "SHOW_BANNER",
+              wayback_url: wayback_url
+            });
           });
-        });
-      }, function() {
+        }, function() {
 
-      });
+        });
+      }
+      else {
+        wmAvailabilityCheck(details.url, function(wayback_url, url) {
+          chrome.browserAction.setBadgeBackgroundColor({color:[255, 0, 0, 230]});
+          chrome.browserAction.setBadgeText({text:"-"});
+        }, function() {
+          chrome.browserAction.setBadgeBackgroundColor({color:[255, 0, 0, 230]});
+          chrome.browserAction.setBadgeText({text:"!"});
+        });
+      }
     }
   }
   if(details.tabId >0 ){
@@ -329,7 +344,7 @@ chrome.webRequest.onErrorOccurred.addListener(function(details) {
       wmAvailabilityCheck(details.url, function(wayback_url, url) {
         chrome.tabs.update(details.tabId, {url: chrome.extension.getURL('dnserror.html')+"?url="+wayback_url});
       }, function() {
-        
+
       });
     }
   }
